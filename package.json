@@ -1,0 +1,23 @@
+{
+  "name": "super-productivity-rest-mcp",
+  "version": "0.1.0",
+  "private": true,
+  "description": "MCP server that wraps the Super Productivity Local REST API as Claude Code tools",
+  "type": "module",
+  "main": "index.js",
+  "bin": {
+    "super-productivity-rest-mcp": "index.js"
+  },
+  "engines": {
+    "node": ">=20.11"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "test": "node test/smoke.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "zod": "^3.25.0"
+  },
+  "license": "UNLICENSED"
+}
