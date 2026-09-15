@@ -10,6 +10,11 @@ import assert from "node:assert/strict";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { createServer } from "../src/server.js";
+import { TaskSchema, TaskListSchema } from "../src/tools/tasks.js";
+import { HealthSchema, StatusSchema } from "../src/tools/health.js";
+import { FocusSchema } from "../src/tools/focus.js";
+import { ProjectListSchema } from "../src/tools/projects.js";
+import { TagListSchema } from "../src/tools/tags.js";
 
 const EXPECTED_TOOLS = [
   "sp_health",
@@ -54,6 +59,60 @@ async function main() {
 
   await client.close();
   await server.close();
+
+  // Response-shape schemas are never exercised by the calls above (the backend is unreachable),
+  // so parse a plausible sample through each one here — this only guards against a broken schema
+  // definition (typo, wrong Zod call), not against the real API drifting from these shapes.
+  const sampleTask = {
+    id: "t1",
+    title: "Sample",
+    isDone: false,
+    subTaskIds: [],
+    tagIds: ["tag1"],
+    extraFutureField: "should be tolerated",
+  };
+  assert.doesNotThrow(() => TaskSchema.parse(sampleTask), "TaskSchema must accept a plausible task");
+  assert.doesNotThrow(() => TaskListSchema.parse([sampleTask]), "TaskListSchema must accept a list of tasks");
+  assert.doesNotThrow(
+    () => HealthSchema.parse({ server: "up", rendererReady: true }),
+    "HealthSchema must accept the documented health shape",
+  );
+  assert.doesNotThrow(
+    () => StatusSchema.parse({ currentTaskId: "t1", taskCount: 3 }),
+    "StatusSchema must accept any object",
+  );
+  assert.doesNotThrow(
+    () =>
+      FocusSchema.parse({
+        mode: "Pomodoro",
+        cycle: 1,
+        isSessionDone: false,
+        timer: {
+          purpose: "work",
+          status: "running",
+          isOvertime: false,
+          isLongBreak: false,
+          elapsedMs: 1000,
+          remainingMs: 2000,
+          durationMs: 3000,
+        },
+      }),
+    "FocusSchema must accept the documented focus shape",
+  );
+  assert.doesNotThrow(
+    () => FocusSchema.parse({ mode: "Flowtime", cycle: 0, isSessionDone: false, timer: null }),
+    "FocusSchema must accept a null timer",
+  );
+  assert.doesNotThrow(
+    () => ProjectListSchema.parse([{ id: "p1", title: "Inbox" }]),
+    "ProjectListSchema must accept a plausible project list",
+  );
+  assert.doesNotThrow(
+    () => TagListSchema.parse([{ id: "g1", title: "urgent" }]),
+    "TagListSchema must accept a plausible tag list",
+  );
+  console.log("✓ response schemas accept plausible sample data");
+
   console.log("\nsmoke test passed");
 }
 

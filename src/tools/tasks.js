@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { toolResult } from "../tool-result.js";
+import { toolResult, parseResponse } from "../tool-result.js";
 
 // Shared field set for create/update — kept as a plain object (not a factory) since both tools
 // need the same fields, just with different optionality expectations from the API's own docs.
@@ -18,6 +18,22 @@ const taskFields = {
   deadlineRemindAt: z.number().optional(),
 };
 
+// Response shape for a task as returned by the API (list items, `GET /tasks/:id`, and
+// `GET /task-control/current` — imported by task-control.js). Built on `taskFields` plus the
+// fields every task is known to carry; `.passthrough()` tolerates any further fields the API adds
+// or that aren't documented, so this only catches genuinely wrong shapes, not incompleteness.
+export const TaskSchema = z
+  .object({
+    ...taskFields,
+    id: z.string(),
+    title: z.string(),
+    isDone: z.boolean(),
+    subTaskIds: z.array(z.string()).optional(),
+  })
+  .passthrough();
+
+export const TaskListSchema = z.array(TaskSchema);
+
 /** CRUD + lifecycle (start/archive/restore) tools for tasks. */
 export function registerTaskTools(server, { callApi }) {
   server.registerTool(
@@ -33,7 +49,8 @@ export function registerTaskTools(server, { callApi }) {
         source: z.enum(["active", "archived", "all"]).optional(),
       },
     },
-    (args) => toolResult(() => callApi("/tasks", { query: args })),
+    (args) =>
+      toolResult(() => callApi("/tasks", { query: args }).then((data) => parseResponse(TaskListSchema, data))),
   );
 
   server.registerTool(
@@ -43,7 +60,10 @@ export function registerTaskTools(server, { callApi }) {
       description: "Returns one task by id.",
       inputSchema: { id: z.string() },
     },
-    ({ id }) => toolResult(() => callApi(`/tasks/${encodeURIComponent(id)}`)),
+    ({ id }) =>
+      toolResult(() =>
+        callApi(`/tasks/${encodeURIComponent(id)}`).then((data) => parseResponse(TaskSchema, data)),
+      ),
   );
 
   server.registerTool(

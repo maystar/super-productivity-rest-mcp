@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { toolResult } from "../tool-result.js";
+import { toolResult, parseResponse } from "../tool-result.js";
+import { TaskSchema } from "./tasks.js";
 
 /** Tools for reading/changing which task is currently running. */
 export function registerTaskControlTools(server, { callApi }) {
@@ -10,7 +11,10 @@ export function registerTaskControlTools(server, { callApi }) {
       description: "Returns the currently running task (task-control).",
       inputSchema: {},
     },
-    () => toolResult(() => callApi("/task-control/current")),
+    () =>
+      toolResult(() =>
+        callApi("/task-control/current").then((data) => parseResponse(TaskSchema.nullable(), data)),
+      ),
   );
 
   server.registerTool(
