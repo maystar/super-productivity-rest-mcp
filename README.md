@@ -116,4 +116,4 @@ SP_REST_TOKEN=... [SP_REST_BASE_URL=http://localhost:3876] node test/manual-clie
 
 ## License
 
-Not yet decided — pick one (e.g. MIT) before relying on this outside your own use.
+[MIT](LICENSE)

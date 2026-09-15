@@ -84,12 +84,3 @@ docker build -t super-productivity-rest-mcp:test .   # if the Dockerfile or pack
 - `.github/workflows/docker-publish.yml` — builds and pushes to GHCR
   (`ghcr.io/<owner>/super-productivity-rest-mcp`) on push to `main` and on `v*.*.*` tags.
 
-## Conventions
-
-- Plain ESM (`"type": "module"`), no TypeScript, no bundler — keep it that way unless there's a
-  concrete reason to add build tooling.
-- User-facing strings (tool descriptions, error messages) are in English, since this is a
-  standalone open-source-shaped project, unlike the German-language workspace it was extracted
-  from.
-- Don't add a runtime dependency without a clear reason; the whole point of this server is to stay
-  small enough to read in one sitting.
